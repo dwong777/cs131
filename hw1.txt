@@ -1,0 +1,10 @@
+Set operations section:
+	The questions on set operations were fairly straightforward. The only thing of note was that in this part, I could have optimized some of the operations a bit by writing more code, but instead I opted to reuse code in order to allow for more elegant solutions. Eg for "equal_sets" I just checked that "a" was a subset of "b" and vice-versa using the "subset" function I already wrote instead of writing custom code to check the two sets were equal. This meant that I made two passes through "a" and "b" instead of one but I thought this was an acceptable tradeoff for code complexity.
+
+Fixed point section:
+	I thought this section was fairly straightforward too given that our code could do anything if there was no fixed point. I kept recursively calling the input function on x and checked if x = f(x); however, this simple design means that my function goes into infinite recursion if there is no fixed point (see my commented out test case).
+
+Filter grammar section:
+	This section was more challenging than the other parts. At a high-level, my code first goes through all grammars for a given input symbol and records the indices of rules with that symbol on the left-hand side of the rule. It then adds these indices to previous indices checked using the "set_union" function from part 3. If the set of symbols checked hasn't changed, then terminate and return the listof symbols checked. Otherwise, it goes through the right-hand side of rules containing the current symbol on the left-hand side and repeats this procedure recursively on the nonterminal symbols on right-hand side. 
+
+	My solution could have been slightly optimized by checking whether a rule had been previously checked before the function call, not after it. But, this would have increased code complexity significantly while improving time-complexity by a constant factor, so I decided not to do it. 

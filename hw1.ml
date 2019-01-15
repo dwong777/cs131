@@ -1,3 +1,6 @@
+(*
+	*** Generic Utilities ***
+*)
 (* Removes duplicates from a sorted list *)
 let rec remove_duplicates lst = 
 	match lst with
@@ -15,15 +18,23 @@ let make_set lst =
 	remove_duplicates (List.sort compare lst)
 ;;
 
-(*
-	Taken from stackoverflow to help with debugging
-	https://stackoverflow.com/questions/9134929/print-a-list-in-ocaml
-*)
-let rec print_list = function [] -> ()
-| e::l -> print_int e ; print_string " " ; print_list l
+(* Selects elements in a list at the given indices *)
+let select_indices lst indices = 
+	let rec select_helper lst indices i = 
+		match indices with
+		| [] -> []
+		| hd :: tl -> 
+			if (hd = i) then
+				(List.hd lst) :: (select_helper (List.tl lst) tl (i+1))
+			else
+				(select_helper (List.tl lst) indices (i+1))
+	in
+
+	select_helper lst indices 0
+;;
 
 (* 
-	Question 1: Determine if a is a subset of b
+	*** Question 1: Determine if a is a subset of b ***
 *)
 let subset a b =
 	let set_a = make_set a in
@@ -44,21 +55,21 @@ let subset a b =
 ;;
 
 (*
-	Question 2: Determine if a = b
+	*** Question 2: Determine if set a = set b ***
 *)
 let equal_sets a b =
 	subset a b && subset b a
 ;;
 
 (* 
-	Question 3: Set union
+	*** Question 3: Set union ***
 *)
 let set_union a b =
 	make_set (a @ b)
 ;;
 
 (*
-	Question 4: Set intersection
+	*** Question 4: Set intersection ***
 *)
 let set_intersection a b =
 	let set_a = make_set a in
@@ -82,7 +93,7 @@ let set_intersection a b =
 ;;
 
 (*
-	Question 5: Set difference
+	*** Question 5: Set difference ***
 *)
 let set_diff a b =
 	let set_a = make_set a in 
@@ -109,7 +120,7 @@ let set_diff a b =
 ;;
 
 (*
-	Question 6: Computed fixed point
+	*** Question 6: Computed fixed point ***
 *)
 let computed_fixed_point eq f x =
 	let fx = f x in
@@ -125,12 +136,12 @@ let computed_fixed_point eq f x =
 ;;
 
 (*
-	Question 7: Unreachable rules
+	*** Question 7: Unreachable rules ***
 *)
 type ('nonterminal, 'terminal) symbol = N of 'nonterminal | T of 'terminal;;
 
 (* 
-	Check which rules have a certain symbol on the left, 
+	Helper function that check which rules have a certain symbol on the left, 
 	and returns their indices as a set 
 *)
 let check_rules rules sym = 
@@ -145,21 +156,6 @@ let check_rules rules sym =
 				(check_rules_helper tl sym (i+1))
 	in
 	check_rules_helper rules sym 0
-;;
-
-(* Selects elements in a list at the given indices *)
-let select_indices lst indices = 
-	let rec select_helper lst indices i = 
-		match indices with
-		| [] -> []
-		| hd :: tl -> 
-			if (hd = i) then
-				(List.hd lst) :: (select_helper (List.tl lst) tl (i+1))
-			else
-				(select_helper (List.tl lst) indices (i+1))
-	in
-
-	select_helper lst indices 0
 ;;
 
 let filter_reachable g =
@@ -212,27 +208,3 @@ let filter_reachable g =
 			(select_indices rules (filter_reachable_helper start rules []))
 		)
 ;;
-
-let main () = 
-	(* Test cases for part 1 *)
-	(* print_string ((string_of_bool (subset [] [3;2;1])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset [5] [3;2;1])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset [1;2;] [3;2;1])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset [5;2] [3;2;1])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset [1;2;3] [3;2;1])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset ["a";"cd"] ["a";"c";"cd"])) ^ "\n");; *)
-	(* print_string ((string_of_bool (subset ["a"] ["a";"c";"cd"])) ^ "\n");; *)
-
-
-	(* Test cases for part 2 *)
-	(* print_string ((string_of_bool (equal_sets [] [])));; *)
-	(* print_string ((string_of_bool (equal_sets ["a"] ["a"])));; *)
-	(* print_string ((string_of_bool (equal_sets ["a"; "b"] ["a"])));; *)
-	print_string "\n";;
-
-	(* print_list (set_union [1;2] [1]);; *)
-
-	(* print_list (set_diff [] [4;3;1]);; *)
-;;
-
-let () = main ()

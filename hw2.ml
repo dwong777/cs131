@@ -62,7 +62,10 @@ let rec matcher_helper
 	(* If prefix totally filled out, return result of acceptor *)
 	if (symbols = []) then accept frag else
 
-	(* Fast termination condition, every symbol generates >= 1 frag *)
+	(* 
+		Fast termination condition, every symbol generates >= 1 nonterm so fail.
+		Protects against left recursion too 
+	*)
 	if (List.length symbols) > (List.length frag) then None else
 
 	(* Otherwise inspect the first symbol *)
@@ -122,7 +125,10 @@ let rec get_derivation
 	(* If fragment or symbol is exhausted without other being exhausted, fail *)
 	if symbols = [] || frag = [] then None else
 
-	(* Fast termination condition, every symbol generates >= 1 nonterm so fail *)
+	(* 
+		Fast termination condition, every symbol generates >= 1 nonterm so fail.
+		Protects against left recursion too 
+	*)
 	if (List.length symbols) > (List.length frag) then None else
 
 	(* Otherwise inspect the first symbol *)
@@ -154,7 +160,7 @@ let rec to_ptree
 		(rhs : ('nonterm,'term) symbol list) 
 		: ('nonterm * ('nonterm,'term) symbol list) list * ('nonterm,'term) parse_tree list =
 			match rhs with 
-			| [] -> deriv, []
+			| [] -> deriv, [] (* Note this keeps line 183 safe *)
 			| r_hd::r_tl -> 
 				match r_hd with
 				| T term -> (* Get rest of results then attach leaf for this terminal *)
@@ -172,7 +178,8 @@ let rec to_ptree
 	in
 
 	match deriv with
-	(* Will get a warning because of not having a [] case, but logically impossible to trigger *)
+	(* Will get a warning because of not having a [] case, but logically 
+		impossible to hit, see line 163 *)
 	| d_hd::d_tl -> match d_hd with (lhs, rhs) ->
 		(* Iterate through right hand side and build out subtrees for each symbol *)
 		let res = ptree_iterator d_tl rhs in

@@ -1,0 +1,74 @@
+High-level design:
+
+I did not directly use make_matcher in make_parser or vice versa, although
+I used many of the same concepts. (I actually asked the professor about this
+and he mentioned we didn't need to actually use them for each other?...)
+The functions were similar though, they traversed the search space in the same
+way, although they processed some cases differently and had to manipulate 
+different types.
+
+The overall design of my matcher and parser is to pretty much DFS possible 
+derivations of a fragment, going through alternatives from left-to-right. This 
+is implemented by passing around a list of symbols. If the head of this symbol
+list is a nonterminal, it tries to expand it using alternatives from the 
+production function going left-to-right. If the head of the symbol list is a 
+terminal, it tries to match this onto the head of the fragment. If it's 
+successfully matched, then we can work on checking the tails of the fragment
+and symbols. But, if they aren't equal, then this derivation definitely doesn't 
+work and the function returns None to indicate failure. This failure is picked 
+up one level up on the recursion tree, where it effectively backtracks and picks
+out the next production rule to use. In the case of the matcher, it keeps 
+running until the symbols are exhausted, then it calls the acceptor on the 
+suffix. In th case of the parser, it keeps running until both symbols and 
+fragment are simulataneously exhausted, indicating a successful derivation 
+(otherwise this is a failure).
+
+Addressing Left Recursion:
+
+I realized this simple solution would fail on grammars that contained left 
+recursion, ie grammars containing rules like "A -> A B" since it would keep
+trying to expand A. So, I fixed this by adding a termination condition that 
+"(List.length symbols > List.length fragment)" would cause a call to my search
+function to return None. This assumes that all rules produces at least one 
+symbol, ie there are no rules like "A -> [empty string]", but I thought this 
+would be a reasonable assumption since the professor did not mention any rules
+like this in class. In addition, it is possible to remove rules that produce 
+empty strings (this is done converting a CFG to Chomsky Normal Form anyways), so
+it would be possible to preprocess a grammar in a production parser. Adding this
+termination condition has the added bonus of effectively trimming our search 
+tree down although this is pared against the cost of getting the lengths of 
+"symbols" and "fragment" since they are linked lists. I demonstrated my code's 
+success with a grammar containing both left and right recursive rules in my test
+cases.
+
+Weaknesses:
+
+My program fails when there are recursive rules or cycles of rules that 
+don't increase the length of the symbols though. Eg, when there are rules like
+"A -> A" or rules "A -> B", "B -> C", and "C -> A", my length-based termination
+condition does not protect against this. Since our grammar's rules are 
+represented as a function instead of a list in this homework, it is difficult 
+to catch cases like this without incurring a significant cost in terms of time.
+If the rules were represented as a list, we could run a function one time to 
+change the rules and remove cycles; however, because it is represented as a 
+function, we would have to wrap the function and check against cycles at every 
+call to the rules function, incurring a heavy cost since the production function
+is called very often.
+
+At a high-level, to remove singular looping rules when the CFG is represented
+as a list:
+-Select all rules that produce exactly one nonterminal output. Let's call these
+"singular" rules.
+-If the rule maps to itself, ie rules like "A -> A", then remove.
+-Generate list of cycles. Do this by selecting each rule and from there 
+expanding and seeing if it can cycle back to the starting symbol. This will 
+terminate because there are n elements in our list so a cycle requires at most 
+n rules to occur.
+-Since all these rules can be reached by each other without producing any other
+symbols, they are functionally equivalent. That is if we can find "A->B" and
+"B->A" A and B are effectively the same so we should join them into one symbol.
+
+As noted though, since our production function is represented as a function 
+rather than list, this would be extremely inefficient since we would be wrapping
+the function instead of modifying the actual list, requiring recomputation of
+the trimmed rules at every call to our production function.

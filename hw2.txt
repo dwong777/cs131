@@ -19,9 +19,16 @@ work and the function returns None to indicate failure. This failure is picked
 up one level up on the recursion tree, where it effectively backtracks and picks
 out the next production rule to use. In the case of the matcher, it keeps 
 running until the symbols are exhausted, then it calls the acceptor on the 
-suffix. In th case of the parser, it keeps running until both symbols and 
+suffix. In the case of the parser, it keeps running until both symbols and 
 fragment are simulataneously exhausted, indicating a successful derivation 
-(otherwise this is a failure).
+(otherwise this is a failure). When the parser is done, it outputs the list of
+rules used in creating the derivation. This is then taken in by a function that 
+converts the list of derivation rules into a parser tree.
+
+Testing:
+
+I noticed that the sample test cases didn't really cover cases where there were
+production rules of the form A->[], so I made sure to cover those when testing.
 
 Addressing Left Recursion:
 
@@ -39,7 +46,9 @@ termination condition has the added bonus of effectively trimming our search
 tree down although this is pared against the cost of getting the lengths of 
 "symbols" and "fragment" since they are linked lists. I demonstrated my code's 
 success with a grammar containing both left and right recursive rules in my test
-cases.
+cases. Since this change would break my program when working with rules of the 
+form A->[], it's disabled, but can be enabled by changing the "left_recursion"
+variable at the top of my program to true.
 
 Weaknesses:
 

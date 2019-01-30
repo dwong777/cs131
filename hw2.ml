@@ -5,6 +5,14 @@ type ('nonterminal, 'terminal) parse_tree =
   | Leaf of 'terminal
 
 (* 
+	This makes left recursion work, but causes it to fail with empty production 
+	rules, ie those of the form A->[empty string] 
+*)
+let left_recursion = false;;
+
+
+
+(* 
 	*** Question 1: Convert hw1 grammar to hw2 grammars ***
 *)
 let rec get_rhs rules lhs = match rules with
@@ -20,6 +28,8 @@ let convert_grammar gram =
 	(fst gram), (get_rhs (snd gram))
 ;;
 
+
+
 (* 
 	*** Question 2: Parse tree leaves and return leaves  ***
 *)
@@ -32,6 +42,8 @@ let parse_tree_leaves tree =
 	in
 	tree_leaves_helper [tree]
 ;;
+
+
 
 (* 
 	*** Question 3: Checks whether a fragment matches a grammar and returns 
@@ -66,24 +78,32 @@ let rec matcher_helper
 		Fast termination condition, every symbol generates >= 1 nonterm so fail.
 		Protects against left recursion too 
 	*)
-	if (List.length symbols) > (List.length frag) then None else
+	if (left_recursion && ((List.length symbols) > (List.length frag))) then None else
 
 	(* Otherwise inspect the first symbol *)
 	match (List.hd symbols) with 
 	| T term ->
-		if (term = (List.hd frag)) then (* Continue expanding symbols *)
+		(match frag with
+		| [] -> None
+		| f_hd::f_tl -> 
+			if term = f_hd then (* Successfully paired off, parser remaining *)
 			matcher_helper (List.tl symbols) rules accept (List.tl frag)
-		else (* Fail, try and backtrack at a higher level *)
-			None 
+			else (* Fail, try and backtrack at a higher level *)
+				None)
 
 	| N nonterm -> 
 		let options = rules nonterm in
-		option_iterator (List.tl symbols) rules accept frag options matcher_helper
+		if options = [] then
+			option_iterator (List.tl symbols) rules accept frag [[]] matcher_helper
+		else
+			option_iterator (List.tl symbols) rules accept frag options matcher_helper
 ;;
 
 let make_matcher gram = 
 	matcher_helper [N (fst gram)] (snd gram)
 ;;
+
+
 
 (*
 	*** Question 4: Generate parse tree for a fragment ***
@@ -122,26 +142,32 @@ let rec get_derivation
 	(* If fragment and symbols simultaneously exhausted, then success *)
 	if symbols = [] && frag = [] then Some [] else
 
-	(* If fragment or symbol is exhausted without other being exhausted, fail *)
-	if symbols = [] || frag = [] then None else
+	(* If symbols are exhausted without fragment being exhausted, fail *)
+	if symbols = [] then None else
 
 	(* 
 		Fast termination condition, every symbol generates >= 1 nonterm so fail.
-		Protects against left recursion too 
+		Protects against left recursion too.
 	*)
-	if (List.length symbols) > (List.length frag) then None else
+	if (left_recursion && ((List.length symbols) > (List.length frag))) then None else
 
 	(* Otherwise inspect the first symbol *)
 	match (List.hd symbols) with 
 	| T term ->
-		if (term = (List.hd frag)) then (* Continue expanding symbols *)
-			get_derivation (List.tl symbols) rules (List.tl frag)
-		else (* Fail, try and backtrack at a higher level *)
-			None 
+		(match frag with
+		| [] -> None
+		| f_hd::f_tl -> 
+			if term = f_hd then (* Successfully paired off, parser remaining *)
+				get_derivation (List.tl symbols) rules (List.tl frag)
+			else (* Fail, try and backtrack at a higher level *)
+				None)
 
 	| N nonterm -> 
 		let options = rules nonterm in
-		option_iterator2 (List.tl symbols) rules frag nonterm options get_derivation
+		if options = [] then (* Edge case for empty options *)
+			option_iterator2 (List.tl symbols) rules frag nonterm [[]] get_derivation
+		else 
+			option_iterator2 (List.tl symbols) rules frag nonterm options get_derivation
 ;;
 
 (*
